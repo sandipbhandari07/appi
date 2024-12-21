@@ -63,19 +63,21 @@ class CommentController extends Controller
         return response()->json($comment, 200);
     }
     
-    public function update(Request $request, $postId, $id)
+
+    public function update(Request $request, $id)
     {
-        $post = Post::find($postId);
-    
+        $comment = Comment::find($id);
+        if(!$comment){
+            return response()->json(['message' => 'Comment'], 404);
+
+        }
+        $post = $comment->post;
+      
+
         if (!$post) {
             return response()->json(['message' => 'Post not found'], 404);
         }
-    
-        $comment = $post->comments()->find($id);
-    
-        if (!$comment) {
-            return response()->json(['message' => 'Comment not found'], 404);
-        }
+
     
         $request->validate([
             'content' => 'sometimes|required|string',

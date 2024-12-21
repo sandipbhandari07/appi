@@ -1,11 +1,17 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
 
 Route::resource('posts', PostController::class);
+Route::put('comments/{id}', [CommentController::class, 'update']);
+
+Route::controller(AuthController::class)->group(function () {
+    Route::post('register', 'register');
+});
+
 
 Route::prefix('posts/{postId}/comments')->group(function () {
     Route::get('/', [CommentController::class, 'index']);
