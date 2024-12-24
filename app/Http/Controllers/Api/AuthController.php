@@ -7,24 +7,15 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use App\Helper\ResponseHelper;
-use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\PersonalAccessToken;
 
-
-
 class AuthController extends Controller
 {
-    /**
-     * register user
-     */
     public function register(RegisterRequest $request)
     {
         try {
-            $responseHelper = new ResponseHelper(); // Instantiate ResponseHelper
-
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -32,79 +23,57 @@ class AuthController extends Controller
                 'phone_number' => $request->phone_number,
             ]);
 
-            if ($user) {
-                return $responseHelper->success(
-                    message: 'User created successfully',
-                    data: $user,
-                    statusCode: 200
-                );
-            }
-
-            return $responseHelper->error(
-                message: 'Failed to create user',
-                statusCode: 400
-            );
-        } catch (Exception $e) {
-            Log::error('Error creating user: ' . $e->getMessage());
-
-            $responseHelper = new ResponseHelper();
-            return $responseHelper->error(
-                message: 'An error occurred while creating the user',
-                statusCode: 500
-            );
+            return response()->json([
+                'success' => true,
+                'message' => 'User registered successfully',
+                'data' => $user
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Registration Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to register user'
+            ], 500);
         }
     }
-
-
 
     public function login(LoginRequest $request)
     {
-        try{
-            //if credentials are invalid
-            if(!Auth::attempt(['email' => $request->email, 'password' => $request->password])){
-                return ResponseHelper::error(message: 'Invalid credentials', statusCode: 400);
-            }
+        if (!Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+            return response()->json(['success' => false, 'message' => 'Invalid credentials'], 401);
+        }
 
-            $user = Auth::user();
-            //creating token
-            $token = $user->createToken('API Token')->plainTextToken;
-            $authUser = [
+        $user = Auth::user();
+        $token = $user->createToken('API Token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login successful',
+            'data' => [
                 'user' => $user,
                 'token' => $token
-            ];
-            return ResponseHelper::success(message: 'Login successful', data: $authUser, statusCode: 200);
-
-        }
-        catch(Exception $e){
-
-            Log::error('Error creating user: '. $e->getMessage());
-            return ResponseHelper::error(message: 'An error occurred while creating the user', statusCode: 500);
-        }
+            ]
+        ], 200);
     }
+
     public function userProfile()
     {
-       try{
-          $user = Auth::user();
-          if($user){
-            return ResponseHelper::success(message: 'Login successful', data: $user, statusCode: 200);
-          }
+        $user = Auth::user();
 
-       }
-       catch(Exception $e){
-        Log::error('Error creating user: '. $e->getMessage());
-        return ResponseHelper::error(message: 'An error occurred while creating the user', statusCode: 500);
-       }
+        return response()->json([
+            'success' => true,
+            'message' => 'User profile fetched successfully',
+            'data' => $user
+        ], 200);
     }
+
     public function userLogout()
     {
-        try{
-            $user = Auth::user();
-            $user->currentAccessToken()->delete();
-            return ResponseHelper::success(message: 'Logout successful', data: [], statusCode: 200);
-        }
-        catch(Exception $e){
-            Log::error('Error creating user: '. $e->getMessage());
-            return ResponseHelper::error(message: 'An error occurred while creating the user', statusCode: 500);
-        }
+        Auth::user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out successfully'
+        ], 200);
     }
 }

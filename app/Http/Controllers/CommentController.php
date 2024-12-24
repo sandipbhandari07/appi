@@ -5,11 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
 {
+    /**
+     * Get all comments for a specific post.
+     */
     public function index($postId)
     {
+        dd(auth()->user());
         $post = Post::find($postId);
 
         if (!$post) {
@@ -21,6 +26,9 @@ class CommentController extends Controller
         return response()->json($comments, 200);
     }
 
+    /**
+     * Store a new comment for a specific post.
+     */
     public function store(Request $request, $postId)
     {
         $post = Post::find($postId);
@@ -30,12 +38,11 @@ class CommentController extends Controller
         }
 
         $request->validate([
-            'user_name' => 'required|string|max:255',
             'content' => 'required|string',
         ]);
 
         $comment = new Comment([
-            'user_name' => $request->user_name,
+            'user_id' => Auth::id(),
             'content' => $request->content,
         ]);
 
@@ -44,68 +51,73 @@ class CommentController extends Controller
         return response()->json($comment, 201);
     }
 
+    /**
+     * Show a specific comment for a post.
+     */
     public function show($postId, $id)
     {
-        // if post exists
         $post = Post::find($postId);
-    
+
         if (!$post) {
             return response()->json(['message' => 'Post not found'], 404);
         }
-    
-        // if comment exists belongs to the post
+
         $comment = $post->comments()->find($id);
-    
+
         if (!$comment) {
             return response()->json(['message' => 'Comment not found'], 404);
         }
-    
+
         return response()->json($comment, 200);
     }
-    
 
+    /**
+     * Update a specific comment.
+     */
     public function update(Request $request, $id)
     {
         $comment = Comment::find($id);
-        if(!$comment){
-            return response()->json(['message' => 'Comment'], 404);
 
-        }
-        $post = $comment->post;
-      
-
-        if (!$post) {
-            return response()->json(['message' => 'Post not found'], 404);
-        }
-
-    
-        $request->validate([
-            'content' => 'sometimes|required|string',
-            'user_name' => 'sometimes|required|string|max:255',
-        ]);
-    
-        // Update the comment
-        $comment->update($request->only(['content', 'user_name']));
-    
-        return response()->json($comment, 200);
-    }
-    public function destroy($postId, $id)
-    {
-        $post = Post::find($postId);
-    
-        if (!$post) {
-            return response()->json(['message' => 'Post not found'], 404);
-        }
-    
-        $comment = $post->comments()->find($id);
-    
         if (!$comment) {
             return response()->json(['message' => 'Comment not found'], 404);
         }
-    
+
+        if ($comment->user_id !== Auth::id()) {
+            return response()->json(['message' => 'You are not authorized to update this comment'], 403);
+        }
+
+        $request->validate([
+            'content' => 'sometimes|required|string',
+        ]);
+
+        $comment->update($request->only(['content']));
+
+        return response()->json($comment, 200);
+    }
+
+    /**
+     * Delete a specific comment.
+     */
+    public function destroy($postId, $id)
+    {
+        $post = Post::find($postId);
+
+        if (!$post) {
+            return response()->json(['message' => 'Post not found'], 404);
+        }
+
+        $comment = $post->comments()->find($id);
+
+        if (!$comment) {
+            return response()->json(['message' => 'Comment not found'], 404);
+        }
+
+        if ($comment->user_id !== Auth::id()) {
+            return response()->json(['message' => 'You are not authorized to delete this comment'], 403);
+        }
+
         $comment->delete();
-    
+
         return response()->json(['message' => 'Comment deleted successfully'], 200);
     }
-    
 }
