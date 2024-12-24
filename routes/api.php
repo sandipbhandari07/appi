@@ -10,6 +10,9 @@ Route::put('comments/{id}', [CommentController::class, 'update']);
 
 Route::controller(AuthController::class)->group(function () {
     Route::post('register', 'register');
+    Route::post('login', 'login');
+    Route::get('user', 'userProfile')->middleware('auth:sanctum');
+    Route::get('logout', 'userLogout')->middleware('auth:sanctum');
 });
 
 
