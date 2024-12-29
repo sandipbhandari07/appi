@@ -12,7 +12,7 @@ class CommentController extends Controller
     /**
      * Get all comments for a specific post.
      */
-    public function index($postId)
+        public function index($postId)
     {
         dd(auth()->user());
         $post = Post::find($postId);

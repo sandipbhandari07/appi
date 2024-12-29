@@ -19,6 +19,12 @@ class PostController extends Controller
 
         $posts = Post::with('comments')->get();
 
+        foreach ($posts as $post) {
+            if ($post->image) {
+                $post->image = $post->image ? Storage::url($post->image) : null;
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Posts fetched successfully',
@@ -33,7 +39,7 @@ class PostController extends Controller
             'status' => 'required|in:active,passive',
             'descriptions' => 'nullable|string',
             'date' => 'nullable|date',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5048',
         ]);
 
         $data = $request->only(['name', 'status', 'descriptions', 'date']);
@@ -44,6 +50,11 @@ class PostController extends Controller
         }
 
         $post = Post::create($data);
+
+        if ($post->image) {
+            $post->image = $post->image ? Storage::url($post->image) : null;
+
+        }
 
         return response()->json([
             'success' => true,
@@ -58,6 +69,11 @@ class PostController extends Controller
 
         if (!$post) {
             return response()->json(['success' => false, 'message' => 'Post not found'], 404);
+        }
+
+        if ($post->image) {
+            $post->image = $post->image ? Storage::url($post->image) : null;
+
         }
 
         return response()->json([
@@ -80,7 +96,7 @@ class PostController extends Controller
             'status' => 'sometimes|in:active,passive',
             'descriptions' => 'nullable|string',
             'date' => 'nullable|date',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5048',
         ]);
 
         $data = $request->only(['name', 'status', 'descriptions', 'date']);
@@ -93,6 +109,10 @@ class PostController extends Controller
         }
 
         $post->update($data);
+
+        if ($post->image) {
+            $post->image = $post->image ? Storage::url($post->image) : null;
+        }
 
         return response()->json([
             'success' => true,
